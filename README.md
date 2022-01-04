@@ -33,8 +33,8 @@ data_renamed <- data %>%
     pid = Subject_ID, timepoint = time, sex = Sex, age = Age,
     prior_H3 = prior_H3,conv = Conv, l2hi = L2titre, titre = Titer
       )
-      
-#analyse prior effect by time
+     
+# analyse prior effect by time
 data_extra <- data_renamed %>%
   mutate(
     exposure_group = case_when(
@@ -47,9 +47,6 @@ data_extra <- data_renamed %>%
     timepoint_lbl = factor(
       timepoint, 1:6, c("pre", "d4", "d7", "d14", "d21","d280")
     ),
-    #timepoint = fct_reorder(timepoint),
-    # NOTE(sen) produces NA for timepoint 9. not sure what that means
-    # (post-season?)
     conv_lbl = factor(
      conv, 0:1, c("no", "yes")
     ),
@@ -74,11 +71,10 @@ gmts <- data_extra %>%
 yticks <- seq(2.32, 14.32, 1)
 ylabs <- c(5,10,20,40,80,160,320,640,1280,2560,5120,10240,20480)  
 
-#plot each value
+# plot each value
 p <- ggplot(data_extra, aes(exposure_group, l2hi,shape = conv_lbl, color = exposure_group )) +
   facet_grid(~ timepoint_lbl) +
   geom_jitter(width=0.3, height=0.3, size=1) +
-  #scale_color_manual(values = c("#b51d14", "#00b25d")) +
   scale_color_manual(values = c("#808080","#0099FF"))+
   scale_shape_manual(values = c(1,3)) +
   scale_y_continuous( "HI titre", breaks = seq(2.32,14.32,1),labels=ylabs) +
@@ -91,15 +87,12 @@ p <- ggplot(data_extra, aes(exposure_group, l2hi,shape = conv_lbl, color = expos
         axis.line = element_line(size = 1),
         plot.title = element_text(hjust = 0.5),
         legend.text = element_text(size=12),
-        legend.position=c(0.2,1)) #+
+        legend.position=c(0.2,1))
 p
 
-#plot gmts to be overlaid
+# plot gmts to be overlaid
 gmt_plot <- ggplot(gmts,aes(exposure_group,  mean, ymin = low, ymax = high, color = exposure_group)) +
   facet_grid(~ timepoint_lbl) +
-  #geom_pointrange(shape=15, size=0.8, position = position_dodge(0.2))+
-  #geom_pointrange(shape=3, size=2)+
-  #geom_errorbar ()+
   geom_crossbar()+
   geom_linerange()+
   scale_color_manual(values = c("#333333","#0033FF"))+
@@ -112,5 +105,5 @@ gmt_plot <- ggplot(gmts,aes(exposure_group,  mean, ymin = low, ymax = high, colo
         axis.text.y = element_text(size=10, margin = margin(0,0,0,0)),
         axis.line = element_line(size = 1),
         legend.text = element_text(size=8),
-        legend.position=c(0.12,0.9)) #
+        legend.position=c(0.12,0.9))
 gmt_plot
