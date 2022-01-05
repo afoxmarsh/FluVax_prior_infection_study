@@ -393,6 +393,7 @@ fig3a <- ggplot(data = LS_long, aes(x = YearClCode2, y = L2titre)) +
 fig3a
 
 # fig 3a right panel  GMTs
+library(tidyverse)
 # read, format and filter data
 data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
 
