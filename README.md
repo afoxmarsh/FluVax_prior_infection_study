@@ -198,7 +198,6 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
   theme_classic() + 
   theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8, margin = margin(2,0,0,0)),
         axis.title.x=element_blank(),
-        #axis.title.x = element_text(size = 20, margin = margin(5,0,0,0)), 
         axis.title.y = element_text(size = 12),
         axis.text.y = element_text(size=8, margin = margin(0,0,0,0)),
         axis.line = element_line(size = 1),
