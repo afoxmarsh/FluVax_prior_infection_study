@@ -270,3 +270,66 @@ fig2c <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
 fig2c
 
 ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
+--
+# fig 2d, gmr by vaccination time-point, all vaccinees
+# read and format data
+LS_long <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
+# convert characters to factors
+LS_long$Subject_ID <- factor(LS_long$Subject_ID)
+# Exclude Townsville 99 from all analysis
+LS_long <- subset(LS_long, !Short_Name %in% c("Townsville/2/99"))
+# no egg viruses (keeping vaccine virus)
+LS_long <- subset(LS_long, !Short_Name %in% c("N_York/55/04e", "Wisc/67/05e","Urug/716/07e","Perth/16/09e","Vic/361/11e", "Texas/50/12e", "Switz/9715293/13e","Kansas/14/17e"))
+-
+# y axis labels, log2 to absolute
+yticks <- seq(0, 8, 1)
+
+ylabs <- c(1,2,4,8,16,32,64,128,256)
+# run gams for fig 2d, 1 per time-point
+model2.cohort = gam(t1_otherDiff ~ s(YearClCode2) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==2), method = "REML")
+                    
+model3.cohort = gam(t1_otherDiff ~ s(YearClCode2) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==3), method = "REML")
+                    
+model4.cohort = gam(t1_otherDiff ~ s(YearClCode2) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==4), method = "REML")
+                    
+model5.cohort = gam(t1_otherDiff ~ s(YearClCode2) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==5), method = "REML")
+                    
+model6.cohort = gam(t1_otherDiff ~ s(YearClCode2) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==6), method = "REML")
+# plot the gams for fig 2d
+fig2d <- ggplot(data = LS_long, aes(x = YearClCode2, y = t1_otherDiff)) + 
+  geom_jitter(data = subset(LS_long, time==3), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#EBA85F") +
+  geom_jitter(data = subset(LS_long, time==4), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#CC6677") + 
+  geom_jitter(data = subset(LS_long, time==5), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#547BD3") +
+  geom_jitter(data = subset(LS_long, time==6), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#C77CFF") + 
+  stat_smooth(data = subset(LS_long, time==3), method="gam", formula=formula(model3.cohort)) +
+  geom_smooth(data = subset(LS_long, time==3), colour = "#EBA85F", fill = "#EBA85F",alpha=0.65) +
+  stat_smooth(data = subset(LS_long, time==4), method="gam", formula=formula(model4.cohort)) +
+  geom_smooth(data = subset(LS_long, time==4), colour = "#CC6677", fill = "#CC6677", alpha=0.5) + 
+  stat_smooth(data = subset(LS_long, time==5), method="gam", formula=formula(model5.cohort)) +
+  geom_smooth(data = subset(LS_long, time==5), colour = "#547BD3", fill = "#547BD3",alpha=0.6) +
+  stat_smooth(data = subset(LS_long, time==6), method="gam", formula=formula(model6.cohort)) +
+  geom_smooth(data = subset(LS_long, time==6), colour = "#C77CFF", fill = "#C77CFF") + 
+  geom_abline(intercept=2, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
+  geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
+  xlab("A(H3N2) virus isolation year") + 
+  scale_x_continuous(breaks=xticks, labels = xlabels) +
+  ylab(expression("titer ratio")) + 
+  coord_cartesian(ylim=c(0, 8)) + 
+  scale_y_continuous(breaks=yticks,labels=ylabs) +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8, margin = margin(2,0,0,0)),
+        axis.title.x=element_text(size = 8, margin = margin(10,0,0,0)),
+        axis.title.y = element_text(size = 8),
+        axis.text.y = element_text(size=8, margin = margin(0,0,0,0)),
+        axis.line = element_line(size = 1),
+        plot.title = element_text(hjust = 0.5),
+        legend.position="top") 
+
+fig2d
+
+ggsave("gam ratio by time Fig 2d.pdf", fig2d, unit = "cm", width = 18, height = 12 )
