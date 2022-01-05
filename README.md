@@ -280,7 +280,6 @@ LS_long$Subject_ID <- factor(LS_long$Subject_ID)
 LS_long <- subset(LS_long, !Short_Name %in% c("Townsville/2/99"))
 # no egg viruses (keeping vaccine virus)
 LS_long <- subset(LS_long, !Short_Name %in% c("N_York/55/04e", "Wisc/67/05e","Urug/716/07e","Perth/16/09e","Vic/361/11e", "Texas/50/12e", "Switz/9715293/13e","Kansas/14/17e"))
--
 # y axis labels, log2 to absolute
 yticks <- seq(0, 8, 1)
 
