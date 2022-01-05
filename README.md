@@ -186,11 +186,10 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
   geom_jitter(data = subset(LS_long, time==1), width=0.3, height=0.4, alpha=0.2, aes(colour=YoB2), size=0.5) +
   stat_smooth(data = subset(LS_long, time==1), method="gam", formula=formula(model1.bd)) +
   geom_smooth(data = subset(LS_long, time==1), aes(colour=YoB2, fill=YoB2)) +
-  scale_color_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) + #YoB x4 MS (new colours)
+  scale_color_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) +
   scale_fill_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) +
   geom_abline(intercept=5.32, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
   geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
-  #geom_jitter(aes(col=prior_Sw13), alpha=0.4, width=0.6, height=0.4, size=1.6) + 
   xlab("A(H3N2) virus isolation year") + 
   scale_x_continuous(breaks=xticks, labels = xlabels) +
   ylab(expression("HI titer")) + 
