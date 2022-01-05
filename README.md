@@ -76,7 +76,7 @@ gmts <- data_extra %>%
   group_by(exposure_group,timepoint_lbl) %>%
   summarise(summarise_logmean(titre), .groups = "drop")
 
-# plot data
+# plot labels, log2 to absolute
 yticks <- seq(2.32, 14.32, 1)
 ylabs <- c(5,10,20,40,80,160,320,640,1280,2560,5120,10240,20480)  
 
