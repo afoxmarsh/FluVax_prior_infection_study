@@ -330,4 +330,65 @@ fig2d
 ggsave("gam ratio by time Fig 2d.pdf", fig2d, unit = "cm", width = 18, height = 12 )
 
 --
+# Figure 3
+# Figure 3a GAM model of antibody titres across viruses by prior A(H3N2) infection status
+library(mgcv)
+
+library(tidyverse)
+
+library(ggpubr)
+# read and format data
+LS_long <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
+# comparison groups
+LS_long$H3inf [LS_long$prior_H3==0] <- 0
+
+LS_long$H3inf [LS_long$prior_H3==1 & LS_long$pcr_conf_prior == 0] <- 1
+
+LS_long$H3inf [LS_long$pcr_conf_prior == 1] <- 2
+
+# convert characters to factors
+LS_long$H3inf <- factor(LS_long$H3inf)
+
+LS_long$Subject_ID <- factor(LS_long$Subject_ID)
+
+# axis labels
+yticks <- seq(2.32, 13.32, 1)
+
+ylabs <- c("nd",10,20,40,80,160,320,640,1280,2560,5120,10240)
+
+LS_long$YearClCode2[LS_long$YearClCode2==2018] <- 2018.5
+
+LS_long$YearClCode2[LS_long$YearClCode2==2017.5] <- 2017.75
+
+xticks <- c(1968,1972,1975,1977,1979.5,1981.5,1987,1989.5,1992.5,1995.5,1996.5,1999,2002,2002.5,2004,2005,2007,2008,2009,2009.25,2010,2011.5,2012,2013,2013.25, 2014,2014.25,2016,2017,2017.75,2018.5)
+
+xlabels <- c("1968","1972","1975","1977","1979","1982","1987","1989","1993","1995","1997","1999","2002","","2004","2005","2007","2008","2009","","2010","2011","2012","2013","", "2014","","2016","2017", "","2018")
+# fit GAM pre-vaccination by prior H3
+model1.bd = gam(L2titre ~ s(YearClCode2, by = H3inf) + H3inf + s(Subject_ID, bs="re"), 
+                data = subset(LS_long, time==1), method = "REML")
+                
+# plot GAM
+fig3a <- ggplot(data = LS_long, aes(x = YearClCode2, y = L2titre)) + 
+  geom_jitter(data = subset(LS_long, time==1), width=0.3, height=0.4, alpha=0.2, aes(colour=H3inf), size=0.5) +
+  stat_smooth(data = subset(LS_long, time==1), method="gam", formula=formula(model1.bd)) +
+  geom_smooth(data = subset(LS_long, time==1), aes(colour=H3inf, fill=H3inf)) +
+  scale_color_manual(values = c("#808080","#FF9933", "#69ba4c")) +
+  scale_fill_manual(values = c("#808080","#FF9933", "#69ba4c")) +
+  geom_abline(intercept=5.32, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
+  geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
+  xlab("A(H3N2) virus isolation year") + 
+  scale_x_continuous(breaks=xticks, labels = xlabels) +
+  ylab(expression("HI titer")) + 
+  coord_cartesian(ylim=c(2.32, 12.5)) + 
+  scale_y_continuous(breaks=yticks,labels=ylabs) +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8, margin = margin(2,0,0,0)),
+        axis.title.x=element_blank(),
+        axis.title.y = element_text(size = 12),
+        axis.text.y = element_text(size=8, margin = margin(0,0,0,0)),
+        axis.line = element_line(size = 1),
+        plot.title = element_text(hjust = 0.5),
+        legend.position="top")
+
+fig3a
 
