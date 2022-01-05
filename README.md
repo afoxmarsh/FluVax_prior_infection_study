@@ -60,7 +60,8 @@ data_extra <- data_renamed %>%
   ) 
 
 # calculate gmts
-summarise_logmean <- function(arr) {
+summarise_logmean <- function(arr) 
+{
   logarr <- log(arr)
   logmean <- mean(logarr)
   logse <- sd(logarr) / sqrt(length(arr))
