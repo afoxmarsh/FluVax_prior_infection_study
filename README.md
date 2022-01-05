@@ -464,6 +464,10 @@ gmts_recent <- data_recent %>%
   group_by(exposure_group, virus_abbr, cell, timepoint_lbl) %>%
   summarise(summarise_logmean(titre), .groups = "drop")
  
+pointrange_shapes <- c(19, 15, 17)
+
+pointrange_colors <- c("#808080","#FF9933", "#69ba4c")
+ 
  # plot GMTs
  plot_pointranges <- function(data, x_name, group_name, y_lab, y_breaks,
                              shapes, colors,
@@ -514,10 +518,7 @@ gmts_recent <- data_recent %>%
       position = position_dodge(width = dodge_width), size = 0.2
     )
 }
- 
-pointrange_shapes <- c(19, 15, 17)
 
-pointrange_colors <- c("#808080","#FF9933", "#69ba4c")
 
 recent_dodge <- 0.6
 
