@@ -203,9 +203,9 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
         plot.title = element_text(hjust = 0.5),
         legend.position="top")
         
- fig2b 
+fig2b 
  
- ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
+ggsave("gam pre titre by yob Fig 2b.pdf", fig2b, unit = "cm", width = 18, height = 12 )
 -
 # run gams for fig 2c, landscape by vaccination time-point, all vaccinees
 model1.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
