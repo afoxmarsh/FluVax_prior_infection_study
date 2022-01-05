@@ -24,6 +24,8 @@ p
 # Figure 2a Antibody titres against vaccine A(H3N2) strain (HK14e) by prior infection ande seroconversion status
 library(tidyverse)
 
+# read and format data
+
 data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
 
 data <- subset(data, virus  %in% c(5))
@@ -38,9 +40,8 @@ data_renamed <- data %>%
   select(
     pid = Subject_ID, timepoint = time, sex = Sex, age = Age,
     prior_H3 = prior_H3,conv = Conv, l2hi = L2titre, titre = Titer
-      )
-     
-# analyse prior effect by time
+      )  
+
 data_extra <- data_renamed %>%
   mutate(
     exposure_group = case_when(
@@ -58,6 +59,7 @@ data_extra <- data_renamed %>%
     ),
   ) 
 
+# calculate gmts
 summarise_logmean <- function(arr) {
   logarr <- log(arr)
   logmean <- mean(logarr)
@@ -73,7 +75,8 @@ summarise_logmean <- function(arr) {
 gmts <- data_extra %>%
   group_by(exposure_group,timepoint_lbl) %>%
   summarise(summarise_logmean(titre), .groups = "drop")
-  
+
+# plot data
 yticks <- seq(2.32, 14.32, 1)
 ylabs <- c(5,10,20,40,80,160,320,640,1280,2560,5120,10240,20480)  
 
