@@ -442,11 +442,17 @@ data_extra <- data_renamed %>%
 data_recent <- data_extra %>%
   filter(virus_year >= 2008)
 
-summarise_logmean <- function(arr) {
+# calculate gmts
+summarise_logmean <- function(arr) 
+{
   logarr <- log(arr)
+  
   logmean <- mean(logarr)
+  
   logse <- sd(logarr) / sqrt(length(arr))
+  
   logerr_margin <- qnorm(0.975) * logse
+  
   tibble(
     mean = exp(logmean),
     low = exp(logmean - logerr_margin),
