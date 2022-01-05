@@ -131,3 +131,86 @@ gmt_plot <- ggplot(gmts,aes(exposure_group,  mean, ymin = low, ymax = high, colo
         legend.position=c(0.12,0.9))
         
 gmt_plot
+--
+# Figure 2b-c
+library(mgcv)
+
+library(tidyverse)
+
+library(ggpubr)
+
+# read and format data
+LS_long <- read.csv("HI_long.csv",header = T, stringsAsFactors = F)
+# group by birth decade - 4 different birth decades. First extract year from DoB and create new column YoB
+LS_long$DoBS <- as.Date(LS_long$DoBS)
+
+LS_long$YoB <- substring(LS_long$DoBS,1,4)
+
+LS_long$YoB2 [LS_long$YoB < 1960] <- "1935-59 (n=24)"
+
+LS_long$YoB2 [LS_long$YoB>=1960 & LS_long$YoB < 1970] <- "1960-69 (n=36)"
+
+LS_long$YoB2 [LS_long$YoB>=1970 & LS_long$YoB < 1980] <- "1970-79 (n=27)"
+
+LS_long$YoB2 [LS_long$YoB>=1980] <- "1980-96 (n=13)"
+
+# convert characters to factors
+LS_long$YoB2 <- factor(LS_long$YoB2)
+
+LS_long$Subject_ID <- factor(LS_long$Subject_ID)
+
+# no egg viruses (keeping vaccine virus)
+LS_long <- subset(LS_long, !Short_Name %in% c("N_York/55/04e", "Wisc/67/05e","Urug/716/07e","Perth/16/09e",
+                                              "Vic/361/11e", "Texas/50/12e", "Switz/9715293/13e","Kansas/14/17e"))
+                                              
+# plot labels, log2 to absolute
+# y axis labels
+yticks <- seq(2.32, 13.32, 1)
+
+ylabs <- c("nd",10,20,40,80,160,320,640,1280,2560,5120,10240)
+# x ticks clade and year all viruses reduced
+LS_long$YearClCode2[LS_long$YearClCode2==2018] <- 2018.5
+
+LS_long$YearClCode2[LS_long$YearClCode2==2017.5] <- 2017.75
+
+xticks <- c(1968,1972,1975,1977,1979.5,1981.5,1987,1989.5,1992.5,1995.5,1996.5,1999,2002,2002.5,2004,2005,2007,2008,2009,2010,2011.5,2012,2013,2013.25, 2014,2014.25,2016,2017,2017.75,2018.5)
+
+xlabels <- c("1968","1972","1975","1977","1979","1982","1987","1989", "1993","1995","1997","1999","2002","","2004","2005","2007","2008","2009","2010","2011","","2013","", "2014", "", "2016", "2017", "", "2018")
+
+# run gam for fig 2b, pre-vaccine landscape by age group
+model1.bd = gam(L2titre ~ s(YearClCode, by = YoB2) + YoB2 + s(Subject_ID, bs="re"), 
+                data = subset(LS_long, time==1), method = "REML")
+                
+# plot gam for fig 2b
+fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) + 
+  geom_jitter(data = subset(LS_long, time==1), width=0.3, height=0.4, alpha=0.2, aes(colour=YoB2), size=0.5) +
+  stat_smooth(data = subset(LS_long, time==1), method="gam", formula=formula(model1.bd)) +
+  geom_smooth(data = subset(LS_long, time==1), aes(colour=YoB2, fill=YoB2)) +
+  scale_color_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) + #YoB x4 MS (new colours)
+  scale_fill_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) +
+  geom_abline(intercept=5.32, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
+  geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
+  #geom_jitter(aes(col=prior_Sw13), alpha=0.4, width=0.6, height=0.4, size=1.6) + 
+  xlab("A(H3N2) virus isolation year") + 
+  scale_x_continuous(breaks=xticks, labels = xlabels) +
+  ylab(expression("HI titer")) + 
+  coord_cartesian(ylim=c(2.32, 12.5)) + 
+  scale_y_continuous(breaks=yticks,labels=ylabs) +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8, margin = margin(2,0,0,0)),
+        axis.title.x=element_blank(),
+        #axis.title.x = element_text(size = 20, margin = margin(5,0,0,0)), 
+        axis.title.y = element_text(size = 12),
+        axis.text.y = element_text(size=8, margin = margin(0,0,0,0)),
+        axis.line = element_line(size = 1),
+        plot.title = element_text(hjust = 0.5),
+        legend.position="top")
+
+ fig2b 
+ 
+ ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
+-
+
+        
+
+
