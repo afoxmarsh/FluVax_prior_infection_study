@@ -392,7 +392,7 @@ fig3a <- ggplot(data = LS_long, aes(x = YearClCode2, y = L2titre)) +
 
 fig3a
 
-# fig 3a right panel  GMTs
+# fig 3a right panel, 3b  GMTs across viruses from 2008-2018
 library(tidyverse)
 # read, format and filter data
 data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
@@ -530,3 +530,46 @@ gmt_recent_plot <- plot_pointranges(
   pointrange_shapes, pointrange_colors,
   dodge_width = recent_dodge, vline_size = recent_vline_size
 )
+
+gmt_recent_plot_PV <- plot_pointranges(
+  gmts_recent %>% filter(timepoint_lbl == "Post d14"),
+  mean, exposure_group, "GMT d14 Post-vaccination", 5 * 2^(0:15),
+  pointrange_shapes, pointrange_colors,
+  dodge_width = recent_dodge, vline_size = recent_vline_size
+)
+# fig 3 c, GMT averaged across 2008-2018 strains
+summarise_av_titre <- function(data, ...) {
+  data %>%
+    group_by(pid, ...) %>%
+    summarise(.groups = "drop", titre_av = exp(mean(log(titre)))) %>%
+    group_by(...) %>%
+    summarise(.groups = "drop", summarise_logmean(titre_av))
+}
+
+
+data_recent_summary <- data_recent %>%
+  summarise_av_titre(timepoint_lbl, exposure_group)
+  
+recent_plot <- data_recent_summary %>%
+  ggplot(aes(timepoint_lbl, mean, col = exposure_group, shape = exposure_group)) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    legend.box.spacing = unit(0, "null"),
+    strip.background = element_blank(),
+    panel.spacing = unit(0, "null"),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 0, size = 10),
+    axis.text.y = element_text(size = 9),
+    axis.title.y = element_text(size = 10),
+  ) +
+  scale_x_discrete("") +
+  scale_y_log10("GMT across 2014-2018 viruses", breaks = 5 * 2^(0:15)) +
+  scale_shape_manual("Group", values = pointrange_shapes) +
+  scale_color_manual("Group", values = pointrange_colors) +
+  coord_cartesian(ylim=c(6, 640)) +
+  geom_pointrange(aes(ymin = low, ymax = high), position = position_dodge(width = 0.5), size = 0.6)
+
+  
+ggsave("2008to18_gmt_3gp.pdf", recent_plot, unit = "cm", width = 10, height = 10)
+
