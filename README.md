@@ -206,8 +206,16 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
 fig2b 
  
 ggsave("gam pre titre by yob Fig 2b.pdf", fig2b, unit = "cm", width = 18, height = 12 )
--
+--
 # run gams for fig 2c, landscape by vaccination time-point, all vaccinees
+# Exclude Townsville 99 from all analysis
+LS_long <- subset(LS_long, !Short_Name %in% c("Townsville/2/99"))
+
+# no egg viruses (keeping vaccine virus)
+LS_long <- subset(LS_long, !Short_Name %in% c("N_York/55/04e", "Wisc/67/05e","Urug/716/07e","Perth/16/09e",
+"Vic/361/11e", "Texas/50/12e", "Switz/9715293/13e","Kansas/14/17e"))
+
+
 model1.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
                     data = subset(LS_long, time==1), method = "REML")
                     
