@@ -1,6 +1,8 @@
 # FluVax_prior_infection_study
 # Data analysis code for each study figure
 # Figure 1a Demographic beeswarm plot
+library(ggbeeswarm)
+
 # read and format data
 LS_wide <- read.csv("HI_timecourse.csv",header = T, stringsAsFactors = F)
 
