@@ -23,11 +23,17 @@ p
 --
 # Figure 2a Antibody titres against vaccine A(H3N2) strain (HK14e) by prior infection ande seroconversion status
 library(tidyverse)
+
 data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
+
 data <- subset(data, virus  %in% c(5))
+
 data <- subset(data, time  <= 6)
+
 data$Conv[data$t1_otherDiff >=2] <- 1
+
 data$Conv[data$t1_otherDiff <2 |data$t1_otherDiff == "NA"] <- 0
+
 data_renamed <- data %>%
   select(
     pid = Subject_ID, timepoint = time, sex = Sex, age = Age,
