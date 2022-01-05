@@ -328,3 +328,6 @@ fig2d <- ggplot(data = LS_long, aes(x = YearClCode2, y = t1_otherDiff)) +
 fig2d
 
 ggsave("gam ratio by time Fig 2d.pdf", fig2d, unit = "cm", width = 18, height = 12 )
+
+--
+
