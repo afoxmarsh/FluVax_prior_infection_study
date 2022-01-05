@@ -392,3 +392,143 @@ fig3a <- ggplot(data = LS_long, aes(x = YearClCode2, y = L2titre)) +
 
 fig3a
 
+# fig 3a right panel  GMTs
+# read, format and filter data
+data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
+
+data$h3_prior <- data$prior_H3
+
+data$PID <- data$Subject_ID
+
+data <- data %>%  filter(time == 1 | time == 3 | time == 4 | time ==5 | time ==6)
+
+data$time[data$time==1] <- 1
+
+data$time[data$time==3] <- 2
+
+data$time[data$time==4] <- 3
+
+data$time[data$time==5] <- 4
+
+data$time[data$time==6] <- 5
+
+data_renamed <- data %>%
+  select(
+    pid = PID, timepoint = time, sex = Sex, age = Age,
+    virus_n = virus, virus_short = Short_Name, cell = Egg_Cell, h3_prior = prior_H3, virus_year = Year,
+    virus_abbr = Virus_Abbrv, virus_order=YearClCode2,last_strain, dob_string = DoBS,
+    titre = Titer, pcr_conf = pcr_conf_prior
+  )
+  
+data_extra <- data_renamed %>%
+  mutate(
+    exposure_group = case_when(
+      h3_prior == 0 ~ "no-prior",
+      h3_prior == 1 & pcr_conf == 0 ~ "prior-seroconversion",
+      pcr_conf == 1 ~ "prior-pcr-confirmed",
+    ) %>%
+      factor(c(
+        "no-prior", "prior-seroconversion",
+        "prior-pcr-confirmed"
+      )),
+    virus_short = fct_reorder(virus_short, virus_order),
+    # (post-season?)
+    # timepoint_lbl = factor(
+    #   timepoint, 1:3, c("Pre-vax", "Post-vax", "Post-season")
+    # ),
+    timepoint_lbl = factor(
+      timepoint, 1:5, c("Pre", "Post d7", "Post d14","Post d21","Post d280")
+    ),
+    dob = lubridate::dmy(
+        if_else(
+        str_detect(dob_string, "\\d{4}$"),
+        dob_string,
+        str_replace(dob_string, "(.*)(\\d{2})$", paste0("\\119\\2"))
+      )
+    )
+  ) 
+
+data_recent <- data_extra %>%
+  filter(virus_year >= 2008)
+
+summarise_logmean <- function(arr) {
+  logarr <- log(arr)
+  logmean <- mean(logarr)
+  logse <- sd(logarr) / sqrt(length(arr))
+  logerr_margin <- qnorm(0.975) * logse
+  tibble(
+    mean = exp(logmean),
+    low = exp(logmean - logerr_margin),
+    high = exp(logmean + logerr_margin)
+  )
+}
+
+gmts_recent <- data_recent %>%
+  group_by(exposure_group, virus_abbr, cell, timepoint_lbl) %>%
+  summarise(summarise_logmean(titre), .groups = "drop")
+ 
+ # plot GMTs
+ plot_pointranges <- function(data, x_name, group_name, y_lab, y_breaks,
+                             shapes, colors,
+                             add_geom = list(),
+                             dodge_width = 1,
+                             vline_size = 8.9) {
+  x_name_q <- rlang::enquo(x_name)
+  group_name_q <- rlang::enquo(group_name)
+  data %>%
+    ggplot(aes(virus_abbr, !!x_name_q, col = !!group_name_q, shape = !!group_name_q)) +
+    theme_bw() +
+    theme(
+      legend.position = "bottom",
+      legend.box.spacing = unit(0, "null"),
+      strip.background = element_blank(),
+      panel.spacing = unit(0, "null"),
+      axis.text.x = element_text(angle = 90, hjust = 1, size = 7),
+      axis.text.y = element_text(size = 7),
+      axis.title.y = element_text(size = 8),
+      axis.title.x = element_text(size = 8),
+      panel.grid.minor = element_blank(),
+    ) +
+    facet_wrap(~timepoint_lbl, ncol = 1, strip.position = "right") +
+    scale_y_log10(y_lab, y_breaks) +
+    scale_x_discrete("Virus") +
+    scale_color_manual(name = "", values = colors) +
+    scale_shape_manual(name = "", values = shapes) +
+    scale_size (range = 0.2,0.5)+
+    coord_cartesian(ylim=c(5, 320)) +
+    geom_vline(
+      aes(xintercept = virus_abbr),
+      data = . %>% filter(as.integer(fct_drop(virus_abbr)) %% 2 == 0),
+      col = "gray85",
+      size = 0.7 * vline_size,
+      alpha = 0.3
+    ) +
+    geom_vline(
+      aes(xintercept = virus_abbr),
+      data = . %>% filter(virus_abbr == "HK14e"),
+      col = "#FFC8E3",
+      size = 0.5 * vline_size,
+      alpha = 0.3
+    ) +
+    geom_abline(intercept=40, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
+    add_geom +
+    geom_pointrange(
+      aes(ymin = low, ymax = high),
+      position = position_dodge(width = dodge_width), size = 0.2
+    )
+}
+ 
+pointrange_shapes <- c(19, 15, 17)
+
+pointrange_colors <- c("#808080","#FF9933", "#69ba4c")
+
+recent_dodge <- 0.6
+
+recent_vline_size <- 9
+
+gmt_recent_plot <- plot_pointranges(
+  gmts_recent %>% filter(timepoint_lbl == "Pre"),
+  mean, exposure_group, "pre-vaccination GMT", 5 * 2^(0:15),
+  pointrange_shapes, pointrange_colors,
+  dodge_width = recent_dodge, vline_size = recent_vline_size
+)
