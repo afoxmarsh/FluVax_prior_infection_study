@@ -227,5 +227,37 @@ model6.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"),
                     data = subset(LS_long, time==6), method = "REML")
         
 # plot gams for fig 2c
+fig2c <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) + 
+  geom_jitter(data = subset(LS_long, time==1), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#6e6e6e") + 
+  geom_jitter(data = subset(LS_long, time==3), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#EBA85F") +
+  geom_jitter(data = subset(LS_long, time==4), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#CC6677") + 
+  geom_jitter(data = subset(LS_long, time==5), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#547BD3") +
+  geom_jitter(data = subset(LS_long, time==6), alpha=0.2, width=0.4, height=0.4, size=0.5, colour = "#C77CFF") + 
+  stat_smooth(data = subset(LS_long, time==1), method="gam", formula=formula(model1.cohort)) +
+  geom_smooth(data = subset(LS_long, time==1), colour = "#6e6e6e", fill = "#6e6e6e", alpha=0.3) + 
+  stat_smooth(data = subset(LS_long, time==3), method="gam", formula=formula(model3.cohort)) +
+  geom_smooth(data = subset(LS_long, time==3), colour = "#EBA85F", fill = "#EBA85F",alpha=0.65) +
+  stat_smooth(data = subset(LS_long, time==4), method="gam", formula=formula(model4.cohort)) +
+  geom_smooth(data = subset(LS_long, time==4), colour = "#CC6677", fill = "#CC6677", alpha=0.5) + 
+  stat_smooth(data = subset(LS_long, time==5), method="gam", formula=formula(model5.cohort)) +
+  geom_smooth(data = subset(LS_long, time==5), colour = "#547BD3", fill = "#547BD3",alpha=0.6) +
+  stat_smooth(data = subset(LS_long, time==6), method="gam", formula=formula(model6.cohort)) +
+  geom_smooth(data = subset(LS_long, time==6), colour = "#C77CFF", fill = "#C77CFF") + 
+  geom_abline(intercept=5.32, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
+  geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
+  xlab("A(H3N2) virus isolation year") + 
+  scale_x_continuous(breaks=xticks, labels = xlabels) +
+  ylab(expression("HI titer")) + 
+  coord_cartesian(ylim=c(2.32, 12.5)) + 
+  scale_y_continuous(breaks=yticks,labels=ylabs) +
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5, vjust = 0.5, size = 8, margin = margin(2,0,0,0)),
+        axis.title.x=element_text(size = 8, margin = margin(10,0,0,0)),
+        axis.title.y = element_text(size = 8),
+        axis.text.y = element_text(size=8, margin = margin(0,0,0,0)),
+        axis.line = element_line(size = 1),
+        plot.title = element_text(hjust = 0.5),
+        legend.position="top") 
 
+fig2c
 
