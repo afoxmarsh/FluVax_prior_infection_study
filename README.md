@@ -444,11 +444,8 @@ data_recent <- data_extra %>%
 
 summarise_logmean <- function(arr) {
   logarr <- log(arr)
-  
   logmean <- mean(logarr)
-  
   logse <- sd(logarr) / sqrt(length(arr))
-  
   logerr_margin <- qnorm(0.975) * logse
   tibble(
     mean = exp(logmean),
