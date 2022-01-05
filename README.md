@@ -159,9 +159,8 @@ LS_long$YoB2 <- factor(LS_long$YoB2)
 
 LS_long$Subject_ID <- factor(LS_long$Subject_ID)
 
-# no egg viruses (keeping vaccine virus)
-LS_long <- subset(LS_long, !Short_Name %in% c("N_York/55/04e", "Wisc/67/05e","Urug/716/07e","Perth/16/09e",
-                                              "Vic/361/11e", "Texas/50/12e", "Switz/9715293/13e","Kansas/14/17e"))
+# Exclude Townsville 99 from all analysis
+LS_long <- subset(LS_long, !Short_Name %in% c("Townsville/2/99"))
                                               
 # plot labels, log2 to absolute
 # y axis labels
