@@ -1,12 +1,16 @@
 # FluVax_prior_infection_study
 # Data analysis code for each study figure
 # Figure 1a Demographic beeswarm plot
+# read and format data
 LS_wide <- read.csv("HI_timecourse.csv",header = T, stringsAsFactors = F)
+
 LS_wide$prior_H3_2 [LS_wide$prior_H3==0] <- "No"
+
 LS_wide$prior_H3_2 [LS_wide$prior_H3==1] <- "Yes"
 
 LS_wide$Sex <- LS_wide$SexS
 
+# plot individual values with median line
 p <- ggplot(data = subset(LS_wide, virus==5), aes(prior_H3_2, Age, color = Sex)) +
   geom_quasirandom(width=0.3, size=1) +
   scale_color_manual(values = c("#d6604d", "#4393c3")) +
@@ -19,6 +23,7 @@ p <- ggplot(data = subset(LS_wide, virus==5), aes(prior_H3_2, Age, color = Sex))
         plot.title = element_text(hjust = 0.5),
         legend.text = element_text(size=7),
         legend.position = "top")
+        
 p
 --
 # Figure 2a Antibody titres against vaccine A(H3N2) strain (HK14e) by prior infection ande seroconversion status
