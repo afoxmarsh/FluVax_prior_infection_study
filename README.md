@@ -435,15 +435,9 @@ data_extra <- data_renamed %>%
     virus_short = fct_reorder(virus_short, virus_order),
     timepoint_lbl = factor(
       timepoint, 1:5, c("Pre", "Post d7", "Post d14","Post d21","Post d280")
-    ),
-    dob = lubridate::dmy(
-        if_else(
-        str_detect(dob_string, "\\d{4}$"),
-        dob_string,
-        str_replace(dob_string, "(.*)(\\d{2})$", paste0("\\119\\2"))
-      )
     )
-  ) 
+    )
+   
 
 data_recent <- data_extra %>%
   filter(virus_year >= 2008)
