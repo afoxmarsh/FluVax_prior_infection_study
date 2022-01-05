@@ -103,6 +103,7 @@ p <- ggplot(data_extra, aes(exposure_group, l2hi,shape = conv_lbl, color = expos
         plot.title = element_text(hjust = 0.5),
         legend.text = element_text(size=12),
         legend.position=c(0.2,1))
+        
 p
 
 # plot gmts to be overlaid
@@ -121,4 +122,5 @@ gmt_plot <- ggplot(gmts,aes(exposure_group,  mean, ymin = low, ymax = high, colo
         axis.line = element_line(size = 1),
         legend.text = element_text(size=8),
         legend.position=c(0.12,0.9))
+        
 gmt_plot
