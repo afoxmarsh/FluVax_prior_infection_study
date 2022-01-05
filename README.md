@@ -438,6 +438,26 @@ data_extra <- data_renamed %>%
     )
     )
    
+# add combined prior infection group
+data_extra <- data_renamed %>%
+  mutate(
+    exposure_group = case_when(
+      h3_prior == 0 ~ "no-prior",
+      h3_prior == 1 ~ "combined-prior",
+    ) %>%
+      factor(c(
+        "no-prior","combined-prior"
+      )),
+    virus_short = fct_reorder(virus_short, virus_order),
+    # (post-season?)
+    # timepoint_lbl = factor(
+    #   timepoint, 1:3, c("Pre-vax", "Post-vax", "Post-season")
+    # ),
+    timepoint_lbl = factor(
+      timepoint, 1:5, c("Pre", "Post d7", "Post d14","Post d21","Post d280")
+    )
+    )
+
 
 data_recent <- data_extra %>%
   filter(virus_year >= 2008)
