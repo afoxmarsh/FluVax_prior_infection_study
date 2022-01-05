@@ -202,7 +202,7 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
         axis.line = element_line(size = 1),
         plot.title = element_text(hjust = 0.5),
         legend.position="top")
---
+        
  fig2b 
  
  ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
@@ -261,3 +261,4 @@ fig2c <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
 
 fig2c
 
+ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
