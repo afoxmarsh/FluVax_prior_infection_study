@@ -202,12 +202,30 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
         axis.line = element_line(size = 1),
         plot.title = element_text(hjust = 0.5),
         legend.position="top")
-
+--
  fig2b 
  
  ggsave("gam titre by time Fig 2c.pdf", fig2c, unit = "cm", width = 18, height = 12 )
 -
-
+# run gams for fig 2c, landscape by vaccination time-point, all vaccinees
+model1.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==1), method = "REML")
+                    
+model2.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==2), method = "REML")
+                    
+model3.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==3), method = "REML")
+                    
+model4.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==4), method = "REML")
+                    
+model5.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==5), method = "REML")
+                    
+model6.cohort = gam(L2titre ~ s(YearClCode) + s(Subject_ID, bs="re"), 
+                    data = subset(LS_long, time==6), method = "REML")
         
+# plot gams for fig 2c
 
 
