@@ -189,6 +189,10 @@ fig2b <- ggplot(data = LS_long, aes(x = YearClCode, y = L2titre)) +
   scale_fill_manual(values = c("#547BD3","#C77CFF","#CC6677","#EBA85F")) +
   geom_abline(intercept=5.32, slope=0, linetype="dotted", col="gray30", lwd=1.15) +
   geom_vline(xintercept = 2014, linetype="dotted", col="gray30", lwd=1.15) +
+  geom_vline(xintercept = 1967.5, linetype="dashed", col="#547BD3", lwd=0.8) +
+  geom_vline(xintercept = 1967.75, linetype="dashed", col="#C77CFF", lwd=0.8) +
+  geom_vline(xintercept = 1971, linetype="dashed", col="#CC6677", lwd=0.8) +
+  geom_vline(xintercept = 1981, linetype="dashed", col="#EBA85F", lwd=0.8) +
   xlab("A(H3N2) virus isolation year") + 
   scale_x_continuous(breaks=xticks, labels = xlabels) +
   ylab(expression("HI titer")) + 
@@ -593,3 +597,399 @@ recent_plot <- data_recent_summary %>%
   
 ggsave("2008to18_gmt_3gp.pdf", recent_plot, unit = "cm", width = 10, height = 10)
 
+--
+# Figure 5ab GAM fit of titres at multiple timepoints with participants grouped by symptomatic H3N2 infection status in the season after vaccination
+library(mgcv)
+library(ggplot2)
+library(lubridate)
+library(tidyverse)
+
+#read and format data
+data <- read.csv("HI_long.csv",header = T, stringsAsFactors = F)
+data <- data %>% filter(Titer !="NA")
+
+#Create variables we want to analyse
+data$H3inf [data$PCRn==3] <- 1
+data$H3inf [is.na(data$PCRn)] <- 0
+
+data$vacc_ili [data$H3inf==0] <- 0
+data$vacc_ili [data$H3inf==1] <- 1
+
+data <- data %>%  filter(time == 1 | time == 3 | time ==5 | time == 8 | time == 9)
+data$time[data$time==1] <- 1
+data$time[data$time==3] <- 2
+data$time[data$time==5] <- 3
+data$time[data$time==8] <- 4
+data$time[data$time==9] <- 5
+
+data_renamed <- data %>%
+  select(
+    pid = Subject_ID, timepoint = time, sex = Sex, age = Age,
+    virus_n = virus, virus_short = Short_Name, cell = Egg_Cell,
+    h3_prior = prior_H3, virus_year = Year,
+    virus_abbr = Virus_Abbrv, last_strain, dob_string = DoBS,
+    ili = H3inf,
+    titre = Titer,vacc_ili = vacc_ili
+    
+data_extra <- data_renamed %>%
+  mutate(
+    exposure_group = case_when(
+      vacc_ili == 0 ~ "no ili",
+      vacc_ili == 1 ~ "vacc ili",
+          ) %>%
+      factor(c(
+        "no ili", "vacc ili"
+      )),
+    exposure_group2 = case_when(
+      vacc_ili == 0 ~ "no ili",
+      vacc_ili == 1 ~ "vacc ili",
+          ) %>%
+      factor(c(
+        "no ili", "vacc ili"
+      )),
+    virus_short = fct_reorder(virus_short, virus_year),
+    timepoint_lbl = factor(
+      timepoint, 1:5, c("Pre-vax", "d7 Post-vax", "d21 Post-vax","d7 Post-ili","d21 Post-ili")
+    ),
+    dob = lubridate::dmy(
+      if_else(
+        str_detect(dob_string, "\\d{4}$"),
+        dob_string,
+        str_replace(dob_string, "(.*)(\\d{2})$", paste0("\\119\\2"))
+      )
+    )
+  ) 
+
+# subset data for panels a and b; v = vaccinated w/o infection, vi = vaccinated then H3N2 infected
+ data_v <- data_extra %>%
+  filter(vacc_ili == 0, timepoint %in% 1:3)
+data_vi <- data_extra %>%
+  filter(vacc_ili == 1, timepoint %in% 1:5)
+  
+#fit gam models
+fit_gam2 <- function(data, key) {
+  fit <- gam(
+    logtitre ~ s(virus_year, by = timepoint) +
+      s(pid_factor, bs = "re") +
+      timepoint,
+    data = data,
+    method = "REML"
+  )
+  attr(fit, "key") <- key
+  fit
+}
+
+calc_data_gam <- function(data) {
+  data %>%
+    mutate(
+      logtitre = log(titre),
+      pid_factor = as.factor(pid),
+    )
+}
+
+data_gam_v <- calc_data_gam(data_v)
+data_gam_vi <- calc_data_gam(data_vi)
+
+data_gam_titre_v <- data_gam_v
+data_gam_titre_vi <- data_gam_vi
+
+calc_gam_titre2 <- function(data) {
+  mgcv::gam(
+    logtitre ~ s(virus_year, by = timepoint_lbl) +
+      s(pid_factor, bs = "re") +
+      timepoint_lbl,
+    data = data,
+    method = "REML"
+  )
+}
+
+fit_gam_v <- calc_gam_titre2(data_gam_titre_v)
+fit_gam_vi <- calc_gam_titre2(data_gam_titre_vi)
+
+predict_data_v <- expand.grid(
+  virus_year = unique(data_v$virus_year),
+  timepoint_lbl = unique(data_v$timepoint_lbl)
+) 
+
+predict_data_vi <- expand.grid(
+  virus_year = unique(data_vi$virus_year),
+  timepoint_lbl = unique(data_vi$timepoint_lbl)
+) 
+
+
+calc_predict <- function(fit, data) {
+  pred <- predict(
+    fit,
+    data,
+    exclude = "s(pid_factor)",
+    se = TRUE,
+    newdata.guaranteed = TRUE
+  )
+  attr(pred, "key") <- attr(fit, "key")
+  pred
+}
+
+predicted_values_v <- calc_predict(fit_gam_v, predict_data_v)
+predicted_values_vi <- calc_predict(fit_gam_vi, predict_data_vi)
+
+
+calc_predict_full <- function(predict_data, predicted_values) {
+  predict_data %>%
+    mutate(
+      predicted_logtitre = predicted_values$fit,
+      se = predicted_values$se.fit,
+      predicted_titre = exp(predicted_logtitre),
+      low = exp(predicted_logtitre - qnorm(0.975) * se),
+      high = exp(predicted_logtitre + qnorm(0.975) * se),
+    )
+}
+
+predicted_full_v <- calc_predict_full(predict_data_v, predicted_values_v)
+predicted_full_vi <- calc_predict_full(predict_data_vi, predicted_values_vi)
+
+# plot gams
+plot_gamT <- function(data, y_var_name = predicted_titre,
+                      colors = pointrange_colors, shapes = pointrange_shapes,
+                      labeller = function(x) x) {
+  y_var_name_q <- rlang::enquo(y_var_name)
+  data %>%
+    ggplot(aes(virus_year, !!y_var_name_q, col = timepoint_lbl, fill = timepoint_lbl)) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      panel.spacing = unit(0, "null"),
+      legend.position = "top",
+      legend.box.spacing = unit(0, "null"),
+      axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
+      axis.title.y = element_text(size = 11),
+      axis.title.x = element_text(size = 11),
+      panel.grid.minor = element_blank()
+    ) +
+    scale_x_continuous("virus year", expand = expansion(), breaks = unique(predicted_full_v$virus_year)) +
+    scale_fill_manual("Time", values = colors, labels = labeller) +
+    scale_color_manual("Time", values = colors, labels = labeller) +
+    scale_shape_manual("Time", values = shapes, labels = labeller) +
+    coord_cartesian(ylim=c(10, 320)) + 
+    geom_ribbon(aes(ymin = low, ymax = high), alpha = 0.2, col = NA) +
+    geom_vline(
+      aes(xintercept = virus_year),
+      data = . %>% filter(virus_year == 2014),
+      alpha = 0.5,
+      lty = "11",
+      col = "black"
+    ) +
+    geom_line() +
+    geom_point(aes(shape = timepoint_lbl))
+}
+
+pointrange_shapes <- c(19, 8,15, 17, 4)
+pointrange_colors <- c("#69ba4c","#927500","#547BD3","#DF4327","#A76BB1")
+
+#fig 2a
+gam_predictions_vT <- plot_gamT(predicted_full_v) +
+  scale_y_log10("Titre", breaks = 5 * 2^(0:15)) +
+  geom_hline(yintercept = 40, lty = "11", col = "black") 
+ggsave("gam_vacc.pdf", gam_predictions_vT, unit = "cm", width = 18, height = 10)
+#fig2b
+gam_predictions_viT <- plot_gamT(predicted_full_vi) +
+  scale_y_log10("Titre", breaks = 5 * 2^(0:15)) +
+  geom_hline(yintercept = 40, lty = "11", col = "black") 
+ggsave("gam_vacc_ili.pdf", gam_predictions_viT, unit = "cm", width = 18, height = 10)
+
+#-------------------------------------
+
+# Fig5 c d 
+
+data <- read.csv("HI_long_diff.csv",header = T, stringsAsFactors = F)
+
+data <- data %>% filter(Titer !="NA")
+
+#Create variables we want to analyse
+data$H3inf [data$PCRn==3] <- 1
+data$H3inf [data$PCRn==0] <- 0
+data$gmr <-  2^data$t1_otherDiff
+data$vacc_ili [data$H3inf==0] <- 0
+data$vacc_ili [data$H3inf==1] <- 1
+
+data <- data %>%  filter(time == 1 | time == 3 | time ==5 | time == 8 | time == 9)
+data$time[data$time==1] <- 1
+data$time[data$time==3] <- 2
+data$time[data$time==5] <- 3
+data$time[data$time==8] <- 4
+data$time[data$time==9] <- 5
+
+
+data_renamed <- data %>%
+  select(
+    pid = Subject_ID, timepoint = time, sex = Sex, age = Age,
+    virus_n = virus, virus_short = Short_Name, cell = Egg_Cell,
+    h3_prior = prior_H3, virus_year = Year,
+    virus_abbr = Virus_Abbrv, last_strain, dob_string = DoBS,
+    ili = H3inf,
+    titre = Titer,gmr = gmr,vacc_ili = vacc_ili
+  )
+  
+  data_extra <- data_renamed %>%
+  mutate(
+    exposure_group = case_when(
+      vacc_ili == 0 ~ "no ili",
+      vacc_ili == 1 ~ "vacc ili",
+          ) %>%
+      factor(c(
+        "no ili", "vacc ili"
+      )),
+    exposure_group2 = case_when(
+      vacc_ili == 0 ~ "no ili",
+      vacc_ili == 1 ~ "vacc ili",
+          ) %>%
+      factor(c(
+        "no ili", "vacc ili"
+      )),
+    virus_short = fct_reorder(virus_short, virus_year),
+    timepoint_lbl = factor(
+      timepoint, 1:5, c("Pre-vax", "d7 Post-vax", "d21 Post-vax","d7 Post-ili","d21 Post-ili")
+    ),
+    dob = lubridate::dmy(
+      if_else(
+        str_detect(dob_string, "\\d{4}$"),
+        dob_string,
+        str_replace(dob_string, "(.*)(\\d{2})$", paste0("\\119\\2"))
+      )
+    )
+  ) 
+
+#analyse by time-point for each exposure group
+
+data_v <- data_extra %>%
+  filter(vacc_ili == 0, timepoint %in% 2:3)
+data_vi <- data_extra %>%
+  filter(vacc_ili == 1, timepoint %in% 2:5)
+  
+#gam by time-point each exposure group separated
+fit_gam2 <- function(data, key) {
+  fit <- gam(
+    logratio ~ s(virus_year, by = timepoint) +
+      s(pid_factor, bs = "re") +
+      timepoint,
+    data = data,
+    method = "REML"
+  )
+  attr(fit, "key") <- key
+  fit
+}
+
+calc_data_gam <- function(data) {
+  data %>%
+    mutate(
+      logratio = log(gmr),
+      pid_factor = as.factor(pid),
+    )
+}
+
+data_gam_ratio_v <- calc_data_gam(data_v)
+data_gam_ratio_vi <- calc_data_gam(data_vi)
+
+calc_gam_ratio2 <- function(data) {
+  mgcv::gam(
+    logratio ~ s(virus_year, by = timepoint_lbl) +
+      s(pid_factor, bs = "re") +
+      timepoint_lbl,
+    data = data,
+    method = "REML"
+  )
+}
+
+fit_gam_v <- calc_gam_ratio2(data_gam_ratio_v)
+fit_gam_vi <- calc_gam_ratio2(data_gam_ratio_vi)
+
+predict_data_v <- expand.grid(
+  virus_year = unique(data_v$virus_year),
+  timepoint_lbl = unique(data_v$timepoint_lbl)
+) 
+
+predict_data_vi <- expand.grid(
+  virus_year = unique(data_vi$virus_year),
+  timepoint_lbl = unique(data_vi$timepoint_lbl)
+) 
+
+
+
+calc_predict <- function(fit, data) {
+  pred <- predict(
+    fit,
+    data,
+    exclude = "s(pid_factor)",
+    se = TRUE,
+    newdata.guaranteed = TRUE
+  )
+  attr(pred, "key") <- attr(fit, "key")
+  pred
+}
+
+predicted_values_v <- calc_predict(fit_gam_v, predict_data_v)
+predicted_values_vi <- calc_predict(fit_gam_vi, predict_data_vi)
+
+calc_predict_full <- function(predict_data, predicted_values) {
+  predict_data %>%
+    mutate(
+      predicted_logtitre = predicted_values$fit,
+      se = predicted_values$se.fit,
+      predicted_titre = exp(predicted_logtitre),
+      low = exp(predicted_logtitre - qnorm(0.975) * se),
+      high = exp(predicted_logtitre + qnorm(0.975) * se),
+    )
+}
+
+predicted_full_v <- calc_predict_full(predict_data_v, predicted_values_v)
+predicted_full_vi <- calc_predict_full(predict_data_vi, predicted_values_vi)
+
+plot_gamT <- function(data, y_var_name = predicted_titre,
+                      colors = pointrange_colors, shapes = pointrange_shapes,
+                      labeller = function(x) x) {
+  y_var_name_q <- rlang::enquo(y_var_name)
+  data %>%
+    ggplot(aes(virus_year, !!y_var_name_q, col = timepoint_lbl, fill = timepoint_lbl)) +
+    theme_bw() +
+    theme(
+      strip.background = element_blank(),
+      panel.spacing = unit(0, "null"),
+      legend.position = "top",
+      legend.box.spacing = unit(0, "null"),
+      axis.text.x = element_text(angle = 90, hjust = 1, size = 10),
+      axis.title.y = element_text(size = 11),
+      axis.title.x = element_text(size = 11),
+      panel.grid.minor = element_blank()
+    ) +
+    scale_x_continuous("virus year", expand = expansion(), breaks = unique(predicted_full_vi$virus_year)) +
+    scale_fill_manual("Time", values = colors, labels = labeller) +
+    scale_color_manual("Time", values = colors, labels = labeller) +
+    scale_shape_manual("Time", values = shapes, labels = labeller) +
+    coord_cartesian(ylim=c(0.5, 8)) + 
+    geom_ribbon(aes(ymin = low, ymax = high), alpha = 0.2, col = NA) +
+    geom_vline(
+      aes(xintercept = virus_year),
+      data = . %>% filter(virus_year == 2014),
+      alpha = 0.5,
+      lty = "11",
+      col = "black"
+    ) +
+    geom_line() +
+    geom_point(aes(shape = timepoint_lbl))
+}
+
+pointrange_shapes <- c(8,15, 17, 4)
+pointrange_colors <- c("#927500","#547BD3","#DF4327","#A76BB1")
+
+gam_predictions_vT <- plot_gamT(predicted_full_v) +
+  scale_y_log10("Geometric Ratio (compared to pre-vaccination titre)", breaks = 1 * 2^(0:15)) +
+  geom_hline(yintercept = 4, lty = "11", col = "black") 
+ggsave("gam_gmr_vacc.pdf", gam_predictions_vT, unit = "cm", width = 18, height = 10)
+
+pointrange_shapes <- c(8,15, 17, 4)
+pointrange_colors <- c("#927500","#547BD3","#DF4327","#A76BB1")
+gam_predictions_viT <- plot_gamT(predicted_full_vi) +
+  scale_y_log10("Geometric Ratio (compared to pre-vaccination titre)", breaks = 1 * 2^(0:15)) +
+  geom_hline(yintercept = 4, lty = "11", col = "black") 
+ggsave ("gam_gmr_vaxinf.pdf",gam_predictions_viT, unit = "cm", width = 18, height = 10 )
+
+#-------------------------------------
